@@ -37,6 +37,12 @@ class CubaDbCreation extends AbstractCubaDbCreation {
     def oracleSystemUser = 'system'
     def oracleSystemPassword = 'manager'
 
+    @Override
+    protected void initAppHomeDir() {
+        CubaPluginExtension ext = (CubaPluginExtension) getProject().getRootProject().getExtensions().getByName("cuba");
+        setAppHomeDir(ext.appHome);
+    }
+
     @TaskAction
     @Override
     void createDb() {

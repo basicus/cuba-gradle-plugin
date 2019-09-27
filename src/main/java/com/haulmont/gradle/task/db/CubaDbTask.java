@@ -198,10 +198,10 @@ public abstract class CubaDbTask extends DefaultTask {
     protected void init() {
         Properties properties = initProperties();
         String dataSourceProvider = properties.getProperty("cuba.dataSourceProvider");
-        if ("application".equals(dataSourceProvider)) {
-            initApplicationDataSource(properties);
-        } else {
+        if ("jndi".equals(dataSourceProvider)) {
             initDefaultDataSource();
+        } else {
+            initApplicationDataSource(properties);
         }
 
         Project project = getProject();
@@ -250,15 +250,17 @@ public abstract class CubaDbTask extends DefaultTask {
     }
 
     protected void initApplicationDataSource(Properties properties) {
+        dbms = properties.getProperty("cuba.dbmsType");
+        dbmsVersion = properties.getProperty("cuba.dbmsVersion");
         dbUrl = properties.getProperty("cuba.dataSource.jdbcUrl");
         dbUser = properties.getProperty("cuba.dataSource.username");
         dbPassword = properties.getProperty("cuba.dataSource.password");
         dbName = properties.getProperty("cuba.dataSource.dbName");
-        host = properties.getProperty("cuba.dataSource.host") + ":" + properties.getProperty("cuba.dataSource.port");
+        host = properties.getProperty("cuba.dataSource.hostname") + ":" + properties.getProperty("cuba.dataSource.port");
         connectionParams = properties.getProperty("cuba.dataSource.connectionParams") == null ?
         "" : properties.getProperty("cuba.dataSource.connectionParams");
 
-        if (dbUrl != null) {
+        if (!StringUtils.isBlank(dbUrl)) {
             initDataSourceByUrl();
         } else {
             initDataSource();
@@ -413,7 +415,8 @@ public abstract class CubaDbTask extends DefaultTask {
         try {
             builder = factory.newDocumentBuilder();
 
-            File webXmlFile = getFileByNameRecursievly(getProject().getProjectDir(), "web.xml");
+            File buildDir = new File(getProject().getProjectDir() + "/web");
+            File webXmlFile = getFileByNameRecursievly(buildDir, "web.xml");
             document = builder.parse(webXmlFile);
         } catch (SAXException | ParserConfigurationException | IOException e) {
             throw new RuntimeException("Can't get properties files names from core web.xml", e);

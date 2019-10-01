@@ -61,8 +61,6 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 
 public abstract class CubaDbTask extends DefaultTask {
-    public static final String APP_COMPONENT_ID_MANIFEST_ATTRIBUTE = "App-Component-Id";
-    public static final String APP_COMPONENT_VERSION_MANIFEST_ATTRIBUTE = "App-Component-Version";
 
     public static final String POSTGRES_DBMS = "postgres";
     public static final String MSSQL_DBMS = "mssql";
@@ -93,6 +91,8 @@ public abstract class CubaDbTask extends DefaultTask {
     protected File dbDir;
     protected Sql sqlInstance;
 
+    private final Logger log = LoggerFactory.getLogger(CubaDbTask.class);
+
     public String getStoreName() {
         return storeName;
     }
@@ -100,8 +100,6 @@ public abstract class CubaDbTask extends DefaultTask {
     public void setStoreName(String storeName) {
         this.storeName = storeName;
     }
-
-    private final Logger log = LoggerFactory.getLogger(CubaDbTask.class);
 
     public String getDbms() {
         return dbms;

@@ -16,6 +16,7 @@
 
 package com.haulmont.gradle.task.db;
 
+import com.google.common.base.Splitter;
 import groovy.lang.GroovyObject;
 import groovy.sql.Sql;
 import org.apache.commons.io.FileUtils;
@@ -452,7 +453,26 @@ public abstract class CubaDbTask extends DefaultTask {
 
     protected void initProperties() {
         String propsConfigName = getPropsConfigName();
+        loadPropertiesFromConfig(propsConfigName);
 
+        String activeProfiles = getActiveProfiles();
+        if (StringUtils.isNotEmpty(activeProfiles)) {
+            Iterable<String> iterableActiveProfiles = Splitter.on(',').omitEmptyStrings().trimResults().split(activeProfiles);
+            for (String activeProfile : iterableActiveProfiles) {
+                String profilePropsConfigName = propsConfigName.replace("app.properties", "app-" + activeProfile.trim() + ".properties");
+                loadPropertiesFromConfig(profilePropsConfigName);
+            }
+        }
+    }
+
+    protected File getPropertiesFromAppHome(String filePath) {
+        if (!filePath.startsWith("/")) {
+            filePath = "/".concat(filePath);
+        }
+        return new File(appHomeDir + filePath);
+    }
+
+    protected void loadPropertiesFromConfig(String propsConfigName) {
         StringTokenizer tokenizer = new StringTokenizer(propsConfigName);
         tokenizer.setQuoteChar('"');
         File props;
@@ -489,13 +509,6 @@ public abstract class CubaDbTask extends DefaultTask {
         }
     }
 
-    protected File getPropertiesFromAppHome(String filePath) {
-        if (!filePath.startsWith("/")) {
-            filePath = "/".concat(filePath);
-        }
-        return new File(appHomeDir + filePath);
-    }
-
     protected File getPropertiesFromFile(String filePath) {
         filePath = filePath.replace("file:", "");
         if (filePath.contains("${app.home}")) {
@@ -515,7 +528,14 @@ public abstract class CubaDbTask extends DefaultTask {
     }
 
     protected String getPropsConfigName() {
-        // get properties from a set of app.properties files defined in web.xml
+        return getParamValueFromWebXml("appPropertiesConfig");
+    }
+
+    protected String getActiveProfiles() {
+        return getParamValueFromWebXml("spring.profiles.active");
+    }
+
+    protected String getParamValueFromWebXml(String paramName) {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         DocumentBuilder builder;
         Document document;
@@ -531,9 +551,8 @@ public abstract class CubaDbTask extends DefaultTask {
         NodeList nList = document.getElementsByTagName("context-param");
         for (int i = 0; i < nList.getLength(); i++) {
             Element nNode = (Element) nList.item(i);
-            Node paramName = nNode.getElementsByTagName("param-name").item(0);
-            String nodeValue = paramName.getTextContent();
-            if ("appPropertiesConfig".equals(nodeValue)) {
+            String currentParamName = nNode.getElementsByTagName("param-name").item(0).getTextContent();
+            if (paramName.equals(currentParamName)) {
                 return nNode.getElementsByTagName("param-value").item(0).getTextContent();
             }
         }

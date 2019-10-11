@@ -50,8 +50,7 @@ class CubaDbUpdate extends CubaDbTask {
 
     @Override
     protected void initAppHomeDir() {
-        CubaPluginExtension ext = (CubaPluginExtension) getProject().getRootProject().getExtensions().getByName("cuba");
-        setAppHomeDir(ext.appHome);
+        setAppHomeDir(project.cuba.appHome);
     }
 
     @TaskAction

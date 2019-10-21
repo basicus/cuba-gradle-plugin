@@ -48,11 +48,6 @@ class CubaDbUpdate extends CubaDbTask {
         setGroup('Database')
     }
 
-    @Override
-    protected void initAppHomeDir() {
-        setAppHomeDir(project.cuba.appHome);
-    }
-
     @TaskAction
     def updateDb() {
         init()
@@ -136,6 +131,11 @@ class CubaDbUpdate extends CubaDbTask {
                 }
             }
         }
+    }
+
+    @Override
+    protected void initAppHomeDir() {
+        setAppHomeDir(project.cuba.appHome);
     }
 
     protected boolean filterInitScript(File script) {

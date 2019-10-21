@@ -37,11 +37,6 @@ class CubaDbCreation extends AbstractCubaDbCreation {
     def oracleSystemUser = 'system'
     def oracleSystemPassword = 'manager'
 
-    @Override
-    protected void initAppHomeDir() {
-        setAppHomeDir(project.cuba.appHome);
-    }
-
     @TaskAction
     @Override
     void createDb() {
@@ -96,6 +91,11 @@ class CubaDbCreation extends AbstractCubaDbCreation {
                 throw new RuntimeException('[CubaDbCreation] Failed to create Postgres scheme')
             }
         }
+    }
+
+    @Override
+    protected void initAppHomeDir() {
+        setAppHomeDir(project.cuba.appHome);
     }
 
     protected boolean executeSql(String user, String password, String sql) {

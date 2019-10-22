@@ -271,20 +271,29 @@ public abstract class CubaDbTask extends DefaultTask {
     }
 
     protected void initApplicationConnectionParams() {
-        dbms = properties.getProperty("cuba.dbmsType");
-        dbmsVersion = properties.getProperty("cuba.dbmsVersion");
-        dbUrl = properties.getProperty("cuba.dataSource.jdbcUrl");
-        dbUser = properties.getProperty("cuba.dataSource.username");
-        dbPassword = properties.getProperty("cuba.dataSource.password");
-        dbName = properties.getProperty("cuba.dataSource.dbName");
-        host = properties.getProperty("cuba.dataSource.hostname") + ":" + properties.getProperty("cuba.dataSource.port");
-        connectionParams = properties.getProperty("cuba.dataSource.connectionParams");
+        dbms = properties.getProperty("cuba.dbmsType" + getStorePrefix());
+        dbmsVersion = properties.getProperty("cuba.dbmsVersion" + getStorePrefix());
+
+        String cubaDataSourcePrefix = "cuba.dataSource" + getStorePrefix();
+        dbUrl = properties.getProperty(cubaDataSourcePrefix + ".jdbcUrl");
+        dbUser = properties.getProperty(cubaDataSourcePrefix + ".username");
+        dbPassword = properties.getProperty(cubaDataSourcePrefix + ".password");
+        dbName = properties.getProperty(cubaDataSourcePrefix + ".dbName");
+        host = properties.getProperty(cubaDataSourcePrefix + ".hostname") + ":" + properties.getProperty(cubaDataSourcePrefix + ".port");
+        connectionParams = properties.getProperty(cubaDataSourcePrefix + ".connectionParams");
 
         if (!StringUtils.isBlank(dbUrl)) {
             initConnectionParams(true);
         } else {
             initConnectionParams(false);
         }
+    }
+
+    protected String getStorePrefix() {
+        if (Stores.MAIN.equals(storeName)) {
+            return "";
+        }
+        return "_".concat(storeName);
     }
 
     protected void initConnectionParams(boolean dbUrlProvided) {

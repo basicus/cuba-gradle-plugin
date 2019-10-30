@@ -16,12 +16,11 @@
 
 package com.haulmont.gradle.task.db;
 
-import com.haulmont.gradle.utils.JarPropertiesLoader;
+import com.haulmont.gradle.utils.AppPropertiesLoader;
 import groovy.lang.GroovyObject;
 import groovy.sql.Sql;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.io.input.BOMInputStream;
 import org.apache.commons.lang3.StringUtils;
 import org.gradle.api.DefaultTask;
 import org.gradle.api.GradleException;
@@ -33,23 +32,12 @@ import java.lang.reflect.Method;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.sql.SQLException;
 import java.util.*;
 
-import org.apache.commons.text.StringTokenizer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
-import org.xml.sax.SAXException;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -65,7 +53,8 @@ public abstract class CubaDbTask extends DefaultTask {
     protected static final String CURRENT_SCHEMA_PARAM = "currentSchema";
     protected static final String MS_SQL_2005 = "2005";
 
-    protected static Properties properties = new Properties();
+    protected AppPropertiesLoader appPropertiesLoader = new AppPropertiesLoader();
+    protected Properties properties = new Properties();
     protected String storeName = Stores.MAIN;
     protected String dbms;
     protected String dbmsVersion;
@@ -215,7 +204,7 @@ public abstract class CubaDbTask extends DefaultTask {
 
     protected void init() {
         initAppHomeDir();
-        initProperties();
+        appPropertiesLoader.initProperties(properties, getProject(), appHomeDir);
         String dataSourceProvider = properties.getProperty("cuba.dataSourceProvider");
         if (dataSourceProvider == null || "jndi".equals(dataSourceProvider)) {
             initJndiConnectionParams();
@@ -370,86 +359,6 @@ public abstract class CubaDbTask extends DefaultTask {
                 markScript(name, true);
             });
         }
-    }
-
-    protected void initProperties() {
-        String propertiesConfigName = getPropertiesConfigName();
-
-        StringTokenizer tokenizer = new StringTokenizer(propertiesConfigName);
-        tokenizer.setQuoteChar('"');
-        for (String str : tokenizer.getTokenArray()) {
-            try (InputStream stream = getPropertiesInputStream(str)) {
-                if (stream == null) {
-                    log.info(String.format("Property file '%s' was not found in the project. Skip it.", str));
-                    continue;
-                }
-
-                log.info("Loading app properties from {}", str);
-                BOMInputStream bomInputStream = new BOMInputStream(stream);
-                try (Reader reader = new InputStreamReader(bomInputStream, StandardCharsets.UTF_8)) {
-                    properties.load(reader);
-                }
-            } catch (IOException e) {
-                throw new RuntimeException("Unable to read properties from stream", e);
-            }
-        }
-    }
-
-    protected InputStream getPropertiesInputStream(String propertyStr) throws FileNotFoundException {
-        InputStream stream = null;
-        if (propertyStr.startsWith("classpath:")) {
-            stream = getPropertiesFromClasspath(propertyStr);
-            if (stream == null) {
-                log.info(String.format("Property file '%s' was not found in the project. Searching in JARs.", propertyStr));
-                stream = JarPropertiesLoader.searchForPropertiesInJars(getProject(), propertyStr.replace("classpath:", ""));
-            }
-        } else if (propertyStr.startsWith("file:")) {
-            stream = getPropertiesFromFile(propertyStr);
-        } else if (propertyStr.startsWith("/WEB-INF/")) {
-            stream = getPropertiesFromWeb(propertyStr);
-        }
-
-        return stream;
-    }
-
-    protected InputStream getPropertiesFromFile(String filePath) throws FileNotFoundException {
-        filePath = filePath.replace("file:", "");
-        if (filePath.contains("${app.home}")) {
-            filePath = filePath.replace("${app.home}", appHomeDir);
-            return new FileInputStream(getProject().file(filePath));
-        }
-        return null;
-    }
-
-    protected InputStream getPropertiesFromWeb(String filePath) throws FileNotFoundException {
-        return new FileInputStream(getProject().file(getProject().getProjectDir() + "/web/" + filePath));
-    }
-
-    protected InputStream getPropertiesFromClasspath(String classpath) throws FileNotFoundException {
-        classpath = classpath.replace("classpath:", "");
-        return new FileInputStream(getProject().file(getProject().getProjectDir() + "/src/" + classpath));
-    }
-
-    protected String getPropertiesConfigName() {
-        // get properties from a set of app.properties files defined in web.xml
-        Document document;
-        try {
-            DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-            File webXmlFile = getProject().file(getProject().getProjectDir() + "/web/WEB-INF/web.xml");
-            document = builder.parse(webXmlFile);
-        } catch (SAXException | ParserConfigurationException | IOException e) {
-            throw new RuntimeException("Can't get properties files names from core web.xml", e);
-        }
-        NodeList nList = document.getElementsByTagName("context-param");
-        for (int i = 0; i < nList.getLength(); i++) {
-            Element nNode = (Element) nList.item(i);
-            Node paramName = nNode.getElementsByTagName("param-name").item(0);
-            String nodeValue = paramName.getTextContent();
-            if ("appPropertiesConfig".equals(nodeValue)) {
-                return nNode.getElementsByTagName("param-value").item(0).getTextContent();
-            }
-        }
-        return null;
     }
 
     protected String getScriptName(File file) {

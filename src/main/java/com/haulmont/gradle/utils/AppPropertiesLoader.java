@@ -55,8 +55,7 @@ public class AppPropertiesLoader {
         for (String str : tokenizer.getTokenArray()) {
             try (InputStream stream = getPropertiesInputStream(project, appHomeDir, str)) {
                 if (stream == null) {
-                    log.info(String.format("Property file '%s' was not found in the project. Skip it.", str));
-                    continue;
+                    throw new FileNotFoundException("Property file '%s' was not found");
                 }
 
                 log.info("Loading app properties from {}", str);
@@ -64,6 +63,8 @@ public class AppPropertiesLoader {
                 try (Reader reader = new InputStreamReader(bomInputStream, StandardCharsets.UTF_8)) {
                     properties.load(reader);
                 }
+            } catch (FileNotFoundException e) {
+                log.info(String.format("Property file '%s' was not found in the project. Skip it.", str), e);
             } catch (IOException e) {
                 throw new RuntimeException("Unable to read properties from stream", e);
             }

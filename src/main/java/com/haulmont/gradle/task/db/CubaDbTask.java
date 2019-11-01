@@ -54,7 +54,7 @@ public abstract class CubaDbTask extends DefaultTask {
     protected static final String MS_SQL_2005 = "2005";
 
     protected AppPropertiesLoader appPropertiesLoader = new AppPropertiesLoader();
-    protected Properties properties = new Properties();
+    protected Properties properties;
     protected String storeName = Stores.MAIN;
     protected String dbms;
     protected String dbmsVersion;
@@ -204,8 +204,8 @@ public abstract class CubaDbTask extends DefaultTask {
 
     protected void init() {
         initAppHomeDir();
-        appPropertiesLoader.initProperties(properties, getProject(), appHomeDir);
-        String dataSourceProvider = properties.getProperty("cuba.dataSourceProvider");
+        properties = appPropertiesLoader.initProperties(getProject(), appHomeDir);
+        String dataSourceProvider = properties.getProperty("cuba.dataSourceProvider" + getStorePostfix());
         if (dataSourceProvider == null || "jndi".equals(dataSourceProvider)) {
             initJndiConnectionParams();
         } else if ("application".equals(dataSourceProvider)) {
@@ -260,10 +260,10 @@ public abstract class CubaDbTask extends DefaultTask {
     }
 
     protected void initApplicationConnectionParams() {
-        dbms = properties.getProperty("cuba.dbmsType" + getStorePrefix());
-        dbmsVersion = properties.getProperty("cuba.dbmsVersion" + getStorePrefix());
+        dbms = properties.getProperty("cuba.dbmsType" + getStorePostfix());
+        dbmsVersion = properties.getProperty("cuba.dbmsVersion" + getStorePostfix());
 
-        String cubaDataSourcePrefix = "cuba.dataSource" + getStorePrefix();
+        String cubaDataSourcePrefix = "cuba.dataSource" + getStorePostfix();
         dbUrl = properties.getProperty(cubaDataSourcePrefix + ".jdbcUrl");
         dbUser = properties.getProperty(cubaDataSourcePrefix + ".username");
         dbPassword = properties.getProperty(cubaDataSourcePrefix + ".password");
@@ -278,7 +278,7 @@ public abstract class CubaDbTask extends DefaultTask {
         }
     }
 
-    protected String getStorePrefix() {
+    protected String getStorePostfix() {
         if (Stores.MAIN.equals(storeName)) {
             return "";
         }

@@ -46,7 +46,8 @@ import java.util.zip.ZipEntry;
 public class AppPropertiesLoader {
     private static final Logger log = LoggerFactory.getLogger(AppPropertiesLoader.class);
 
-    public void initProperties(Properties properties, Project project, String appHomeDir) {
+    public Properties initProperties(Project project, String appHomeDir) {
+        Properties properties = new Properties();
         String propertiesConfigName = getPropertiesConfigName(project);
 
         StringTokenizer tokenizer = new StringTokenizer(propertiesConfigName);
@@ -62,11 +63,12 @@ public class AppPropertiesLoader {
                 BOMInputStream bomInputStream = new BOMInputStream(stream);
                 try (Reader reader = new InputStreamReader(bomInputStream, StandardCharsets.UTF_8)) {
                     properties.load(reader);
-            }
+                }
             } catch (IOException e) {
                 throw new RuntimeException("Unable to read properties from stream", e);
             }
         }
+        return properties;
     }
 
     protected String getPropertiesConfigName(Project project) {
@@ -135,7 +137,7 @@ public class AppPropertiesLoader {
     }
 
     protected static InputStream walkJarDependencies(Set<ResolvedDependency> dependencies,
-                                     Set<ResolvedArtifact> passedArtifacts, String propsClasspath) {
+                                                     Set<ResolvedArtifact> passedArtifacts, String propsClasspath) {
         for (ResolvedDependency dependency : dependencies) {
             walkJarDependencies(dependency.getChildren(), passedArtifacts, propsClasspath);
 
@@ -163,10 +165,8 @@ public class AppPropertiesLoader {
             if (propsEntry == null) {
                 return null;
             }
-            try (BOMInputStream bomInputStream = new BOMInputStream(jarFile.getInputStream(propsEntry))) {
-                log.info("Loading app properties from {}", propsClasspath);
-                return bomInputStream;
-            }
+            log.info("Loading app properties from {}", propsClasspath);
+            return jarFile.getInputStream(propsEntry);
         } catch (IOException e) {
             throw new RuntimeException(String.format("[CubaPlugin] Error occurred during properties searching at %s", artifact.getFile().getAbsolutePath()), e);
         }

@@ -46,6 +46,8 @@ import java.util.zip.ZipEntry;
 
 public class AppPropertiesLoader {
     private static final Logger log = LoggerFactory.getLogger(AppPropertiesLoader.class);
+    protected static final String ACTIVE_PROFILES_PROPERTY_NAME = "spring.profiles.active";
+    protected static final String APP_PROPERTIES_CONFIG_PROPERTY_NAME = "appPropertiesConfig";
 
     public Properties initProperties(Project project, String appHomeDir) {
         Properties properties = new Properties();
@@ -89,11 +91,15 @@ public class AppPropertiesLoader {
     }
 
     protected String getActiveProfiles(Project project) {
-        return getParamValueFromWebXml(project,"spring.profiles.active");
+        String activeProfiles = System.getProperty(ACTIVE_PROFILES_PROPERTY_NAME);
+        if (StringUtils.isEmpty(activeProfiles)) {
+            activeProfiles = getParamValueFromWebXml(project, ACTIVE_PROFILES_PROPERTY_NAME);
+        }
+        return activeProfiles;
     }
 
     protected String getPropertiesConfigName(Project project) {
-        return getParamValueFromWebXml(project,"appPropertiesConfig");
+        return getParamValueFromWebXml(project, APP_PROPERTIES_CONFIG_PROPERTY_NAME);
     }
 
     protected String getParamValueFromWebXml(Project project, String paramName) {

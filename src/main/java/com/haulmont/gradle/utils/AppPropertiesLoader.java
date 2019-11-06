@@ -100,7 +100,7 @@ public class AppPropertiesLoader {
         Document document;
         try {
             DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-            File webXmlFile = new File(project.getProjectDir() + "/web/WEB-INF/web.xml");
+            File webXmlFile = project.file(project.getProjectDir() + "/web/WEB-INF/web.xml");
             if (!webXmlFile.exists()) {
                 return null;
             }

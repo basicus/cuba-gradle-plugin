@@ -16,7 +16,9 @@
 
 package com.haulmont.gradle.utils;
 
+import com.google.common.base.Splitter;
 import org.apache.commons.io.input.BOMInputStream;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.text.StringTokenizer;
 import org.gradle.api.Project;
 import org.gradle.api.artifacts.Configuration;
@@ -27,7 +29,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
-import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
@@ -49,7 +50,22 @@ public class AppPropertiesLoader {
     public Properties initProperties(Project project, String appHomeDir) {
         Properties properties = new Properties();
         String propertiesConfigName = getPropertiesConfigName(project);
+        properties.putAll(getPropertiesFromConfig(propertiesConfigName, project, appHomeDir));
 
+        String activeProfiles = getActiveProfiles(project);
+        if (StringUtils.isNotEmpty(activeProfiles)) {
+            Iterable<String> iterableActiveProfiles = Splitter.on(',').omitEmptyStrings().trimResults().split(activeProfiles);
+            for (String activeProfile : iterableActiveProfiles) {
+                String profilePropsConfigName = propertiesConfigName.replace("app.properties", "app-" + activeProfile.trim() + ".properties");
+                properties.putAll(getPropertiesFromConfig(profilePropsConfigName, project, appHomeDir));
+            }
+        }
+
+        return properties;
+    }
+
+    protected Properties getPropertiesFromConfig(String propertiesConfigName, Project project, String appHomeDir) {
+        Properties properties = new Properties();
         StringTokenizer tokenizer = new StringTokenizer(propertiesConfigName);
         tokenizer.setQuoteChar('"');
         for (String str : tokenizer.getTokenArray()) {
@@ -72,12 +88,19 @@ public class AppPropertiesLoader {
         return properties;
     }
 
+    protected String getActiveProfiles(Project project) {
+        return getParamValueFromWebXml(project,"spring.profiles.active");
+    }
+
     protected String getPropertiesConfigName(Project project) {
-        // get properties from a set of app.properties files defined in web.xml
+        return getParamValueFromWebXml(project,"appPropertiesConfig");
+    }
+
+    protected String getParamValueFromWebXml(Project project, String paramName) {
         Document document;
         try {
             DocumentBuilder builder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
-            File webXmlFile = project.file(project.getProjectDir() + "/web/WEB-INF/web.xml");
+            File webXmlFile = new File(project.getProjectDir() + "/web/WEB-INF/web.xml");
             if (!webXmlFile.exists()) {
                 return null;
             }
@@ -85,12 +108,12 @@ public class AppPropertiesLoader {
         } catch (SAXException | ParserConfigurationException | IOException e) {
             throw new RuntimeException("Can't get properties files names from core web.xml", e);
         }
+
         NodeList nList = document.getElementsByTagName("context-param");
         for (int i = 0; i < nList.getLength(); i++) {
             Element nNode = (Element) nList.item(i);
-            Node paramName = nNode.getElementsByTagName("param-name").item(0);
-            String nodeValue = paramName.getTextContent();
-            if ("appPropertiesConfig".equals(nodeValue)) {
+            String currentParamName = nNode.getElementsByTagName("param-name").item(0).getTextContent();
+            if (paramName.equals(currentParamName)) {
                 return nNode.getElementsByTagName("param-value").item(0).getTextContent();
             }
         }

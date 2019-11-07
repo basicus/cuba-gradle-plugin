@@ -72,6 +72,7 @@ public abstract class CubaDbTask extends DefaultTask {
     protected String appHomeDir;
     protected File dbDir;
     protected Sql sqlInstance;
+    protected boolean inMemory;
 
     private final Logger log = LoggerFactory.getLogger(CubaDbTask.class);
 
@@ -81,6 +82,14 @@ public abstract class CubaDbTask extends DefaultTask {
 
     public void setStoreName(String storeName) {
         this.storeName = storeName;
+    }
+
+    public boolean isInMemory() {
+        return inMemory;
+    }
+
+    public void setInMemory(boolean inMemory) {
+        this.inMemory = inMemory;
     }
 
     public String getDbms() {
@@ -268,7 +277,11 @@ public abstract class CubaDbTask extends DefaultTask {
         dbUser = properties.getProperty(cubaDataSourcePrefix + ".username");
         dbPassword = properties.getProperty(cubaDataSourcePrefix + ".password");
         dbName = properties.getProperty(cubaDataSourcePrefix + ".dbName");
-        host = properties.getProperty(cubaDataSourcePrefix + ".hostname") + ":" + properties.getProperty(cubaDataSourcePrefix + ".port");
+        host = properties.getProperty(cubaDataSourcePrefix + ".hostname");
+        if (StringUtils.isNotEmpty(properties.getProperty(cubaDataSourcePrefix + ".port"))) {
+            host = host + ":" + properties.getProperty(cubaDataSourcePrefix + ".port");
+        }
+        inMemory = Boolean.parseBoolean(properties.getProperty(cubaDataSourcePrefix + ".inMemory"));
         connectionParams = properties.getProperty(cubaDataSourcePrefix + ".connectionParams");
 
         if (!StringUtils.isBlank(dbUrl)) {

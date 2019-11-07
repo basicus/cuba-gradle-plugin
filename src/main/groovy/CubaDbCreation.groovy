@@ -193,9 +193,11 @@ grant create session,
     }
 
     protected void configureHsql() {
-
         if (!masterUrl) {
             masterUrl = "jdbc:hsqldb:hsql://$host/$dbName$connectionParams"
+            if (inMemory) {
+                masterUrl = "jdbc:hsqldb:mem:$storeName"
+            }
         }
         if (!dropDbSql) {
             dropDbSql = "drop schema public cascade;"

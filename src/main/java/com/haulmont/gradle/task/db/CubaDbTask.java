@@ -202,7 +202,7 @@ public abstract class CubaDbTask extends DefaultTask {
     protected void initAppHomeDir() {
     }
 
-    protected boolean cubaDbTaskJndiCheck() {
+    protected boolean isInitFromCubaDbTask() {
         return StringUtils.isNotEmpty(dbUrl) || StringUtils.isNotEmpty(host);
     }
 
@@ -210,10 +210,10 @@ public abstract class CubaDbTask extends DefaultTask {
         initAppHomeDir();
         properties = appPropertiesLoader.initProperties(getProject(), appHomeDir);
         String dataSourceProvider = properties.getProperty("cuba.dataSourceProvider" + getStorePostfix());
-        if (dataSourceProvider == null || "jndi".equals(dataSourceProvider) || cubaDbTaskJndiCheck()) {
-            initJndiConnectionParams();
+        if (dataSourceProvider == null || "jndi".equals(dataSourceProvider) || isInitFromCubaDbTask()) {
+            initConnectionParamsFromDbTask();
         } else if ("application".equals(dataSourceProvider)) {
-            initApplicationConnectionParams();
+            initConnectionParamsFromAppProperties();
         } else {
             throw new RuntimeException(String.format("DataSource provider '%s' is unsupported! Available: 'jndi', 'application'", dataSourceProvider));
         }
@@ -257,13 +257,13 @@ public abstract class CubaDbTask extends DefaultTask {
         project.getLogger().info("[CubaDbTask] driverClasspath: " + driverClasspath);
     }
 
-    protected void initJndiConnectionParams() {
+    protected void initConnectionParamsFromDbTask() {
         if (StringUtils.isBlank(driver) || StringUtils.isBlank(dbUrl)) {
             initConnectionParams(false);
         }
     }
 
-    protected void initApplicationConnectionParams() {
+    protected void initConnectionParamsFromAppProperties() {
         dbms = properties.getProperty("cuba.dbmsType" + getStorePostfix());
         dbmsVersion = properties.getProperty("cuba.dbmsVersion" + getStorePostfix());
 

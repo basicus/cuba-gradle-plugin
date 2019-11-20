@@ -99,7 +99,7 @@ class CubaDbCreation extends AbstractCubaDbCreation {
     }
 
     @Override
-    protected boolean cubaDbTaskJndiCheck() {
+    protected boolean isInitFromCubaDbTask() {
         return StringUtils.isNotEmpty(dbUrl) || StringUtils.isNotEmpty(dbName) || StringUtils.isNotEmpty(masterUrl);
     }
 

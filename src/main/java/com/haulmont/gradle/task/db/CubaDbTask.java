@@ -202,7 +202,7 @@ public abstract class CubaDbTask extends DefaultTask {
     protected void initAppHomeDir() {
     }
 
-    protected boolean isInitFromCubaDbTask() {
+    protected boolean isInitParamsFromDbTask() {
         return StringUtils.isNotEmpty(dbUrl) || StringUtils.isNotEmpty(host);
     }
 
@@ -210,7 +210,7 @@ public abstract class CubaDbTask extends DefaultTask {
         initAppHomeDir();
         properties = appPropertiesLoader.initProperties(getProject(), appHomeDir);
         String dataSourceProvider = properties.getProperty("cuba.dataSourceProvider" + getStorePostfix());
-        if (dataSourceProvider == null || "jndi".equals(dataSourceProvider) || isInitFromCubaDbTask()) {
+        if (dataSourceProvider == null || "jndi".equals(dataSourceProvider) || isInitParamsFromDbTask()) {
             initConnectionParamsFromDbTask();
         } else if ("application".equals(dataSourceProvider)) {
             initConnectionParamsFromAppProperties();
